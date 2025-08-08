@@ -1,3 +1,7 @@
+#
+#
+docker exec -it kafka bash [open terminal in bash mode for kafka container]
+
 # create a kafka topic called hello-world
 # we assume that directory which contains 'kafka-topics.sh' is included in the PATH
 kafka-topics.sh --bootstrap-server localhost:9092 --topic hello-world --create

@@ -50,9 +50,10 @@ Clients (e.g., services) produce and consume events by talking to brokers.
 ### 🧱 Kafka Server Roles
 Although we generally refer to all Kafka instances as servers, Kafka assigns specific roles based on their function:
 
-Role	                 Responsibility
-Broker	                  Stores topic data, handles client read/write traffic
-Controller	              Manages the cluster and broker assignments
+| Role       | Responsibility                                          |
+|------------|----------------------------------------------------------|
+| Broker     | Stores topic data, handles client read/write traffic     |
+| Controller | Manages the cluster and broker assignments               |
 
 In small clusters, a single Kafka server can act as both broker and controller.
 In large-scale setups, it's better to separate these roles for scalability.

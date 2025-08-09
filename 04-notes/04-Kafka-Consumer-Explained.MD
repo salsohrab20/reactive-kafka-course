@@ -284,3 +284,87 @@ This section covers real-world Kafka behavior and edge cases related to **consum
    - Migrate to a new topic
 
 > Choose a strategy based on **your application’s tolerance for message reordering and downtime**.
+
+
+# 📊 Kafka Monitoring: Tracking Consumer Lag & Offsets
+
+Kafka provides a built-in command-line tool to track **how many messages have been produced**, **how many have been consumed**, and **how many are still pending (lagging)**.
+
+This file walks through a live demo scenario using the `kafka-consumer-groups.sh` command.
+
+---
+
+## 🧪 Demo Setup
+
+- **Topic**: `hello-world` with **2 partitions**
+- **Producer**: Starts producing messages with **different keys**
+- **Consumer Group**: `kg`
+    - Initially, the consumer is **not started**
+
+---
+
+## 🧵 Step-by-Step Behavior
+
+### 1️⃣ Produce Messages Before Consumer Starts
+
+- Sent 8 messages to the topic before starting the consumer
+- Because the consumer group `kg` does **not yet exist**, Kafka won’t track offsets yet
+
+### 2️⃣ Start Consumer Group `kg`
+
+- When the consumer starts for the first time:
+    - It **does NOT consume old messages**
+    - It only processes **new messages from this point forward**
+
+> 📌 This is the default behavior unless the offset reset policy is explicitly set (e.g., `--from-beginning`).
+
+---
+
+## 🔍 Using the Kafka Lag Monitoring Command
+
+```bash
+kafka-consumer-groups.sh \
+  --bootstrap-server localhost:9092 \
+  --group kg \
+  --describe
+```
+--- 
+### Output Example:
+| TOPIC       | PARTITION | CURRENT-OFFSET | LOG-END-OFFSET | LAG | CONSUMER-ID |
+|-------------|-----------|----------------|----------------|-----|--------------|
+| hello-world | 0         | 4              | 4              | 0   | consumer-1   |
+| hello-world | 1         | 4              | 4              | 0   | consumer-1   |
+
+
+Current Offset: Last message the consumer has processed
+
+Log End Offset: Last message that was produced to the partition
+
+Lag = Messages still waiting to be processed = Log End Offset - Current Offset
+
+### Stop the Consumer → Produce More Messages
+Produced additional messages while the consumer was offline
+
+Re-ran the monitoring command:
+
+Updated Output:
+
+| PARTITION | CURRENT-OFFSET | LOG-END-OFFSET | LAG |
+|-----------|----------------|----------------|-----|
+| 0         | 6              | 7              | 1   |
+| 1         | 6              | 11             | 5   |
+
+
+🎯 Kafka tracks exactly how many messages are pending per partition for that group.
+
+---
+### ✅ Summary
+
+| Concept                | Description                                              |
+| ---------------------- | -------------------------------------------------------- |
+| `Current Offset`       | Last processed message offset per partition              |
+| `Log End Offset`       | Latest message offset produced to the partition          |
+| `Lag`                  | Messages waiting to be processed                         |
+| Tool Used              | `kafka-consumer-groups.sh --describe`                    |
+| Default Consumer Start | Begins from latest message (unless configured otherwise) |
+| Offset Persistence     | Kafka remembers where each group left off                |

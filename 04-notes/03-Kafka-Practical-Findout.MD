@@ -13,7 +13,7 @@ This section demonstrates how Kafka’s **console producer** and **console consu
 
 Start the Console Producer:
 
-`kafka-console-producer.sh --broker-list <broker>:9092 --topic <topic-name>`
+`kafka-console-producer.sh --bootstrap-server <broker>:9092 --topic <topic-name>`
 
 Send Messages:
 Type messages into the producer terminal and hit Enter.
@@ -31,7 +31,7 @@ Default Behavior:
 You can reduce the delay by lowering the linger.ms value, which controls how long the producer waits before sending a batch:
 `
 kafka-console-producer.sh \
---broker-list <broker>:9092 \
+--bootstrap-server <broker>:9092 \
 --topic <topic-name> \
 --producer-property linger.ms=50`
 

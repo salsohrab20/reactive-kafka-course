@@ -212,5 +212,67 @@ ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG = "true"
 | `enable.auto.commit=true` | Kafka commits offsets periodically (automatically)  | Low     | Higher            |
 | Manual Acknowledgement    | You explicitly commit after processing each message | High    | Lower             |
 
+# Kafka Consumer Scenario
+
+Let’s say we’ve built a consumer application that processes credit card events.
+
+## Message Flow:
+
+1. The app requests messages from the Kafka broker.
+2. It receives and processes the messages — for example, charging users.
+3. However, before sending an acknowledgment to Kafka, something goes wrong:
+  - A network issue occurs, or
+  - The server restarts.
+
+## What Happens Next?
+
+- After restarting, if the app asks Kafka for messages again, **Kafka will re-deliver the same messages** because it **never received the acknowledgment**.
+- This means the app might **process and charge users a second time**.
+
+## Key Takeaway:
+
+Kafka guarantees **at-least-once** delivery by default, so duplicates can happen if acknowledgments fail.
+
+---
+
+## Out of Order Commit
+
+# Kafka Consumer Acknowledgement Scenario
+
+Let’s explore another Kafka scenario involving message acknowledgments.
+
+## Setup
+
+- **Kafka Broker** and **Kafka Consumer** are running.
+- There’s one topic with **millions of messages**.
+- Kafka delivers messages **in batches**, not all at once.
+
+## Scenario
+
+1. The consumer requests messages.
+2. The broker delivers **messages 1, 2, 3, and 4**.
+3. The consumer processes the messages as follows:
+  - **Message 1**: Processed, **not acknowledged**
+  - **Message 2**: Processed, **not acknowledged**
+  - **Message 3**: Processed, **not acknowledged**
+  - **Message 4**: Processed, **acknowledged**
+4. Then, the **server crashes** or restarts.
+5. After restart, the consumer requests messages again.
+
+## What Will Kafka Deliver?
+
+- Kafka will **start delivering from message 5 onward** (e.g., 5, 6, 7, etc.).
+- Why?
+  - Kafka uses **acknowledgments as bookmarks** to track the consumer’s progress.
+  - Since **message 4 was acknowledged**, Kafka assumes that messages 1–4 were successfully processed.
+  - Therefore, it skips those and delivers the next messages.
+
+## Key Point
+
+> The **last acknowledged message** tells Kafka where to resume delivery from.
+
+Understanding this helps in designing systems that are resilient and avoid reprocessing already-handled messages.
+
+
 
 

@@ -105,3 +105,96 @@ sender.send(outboundFlux)
 - Use SenderRecord to wrap ProducerRecord with correlation metadata.
 - Kafka will deliver messages asynchronously and return metadata that can be used for tracking.
 - Logging correlation IDs helps verify successful deliveries.
+
+#### 🔍 Common Question
+
+You might come across blogs or tutorials where a sender is not explicitly closed, raising the question:
+
+> **Should I manually close the sender?**
+
+#### 🧠 Clarification
+
+* You can create and use a sender like this:
+
+  ```java
+  var sender = ...;
+  sender.send(...);
+  ```
+
+* Both of the following usages are functionally the same.
+
+#### 🔒 To Close or Not to Close?
+
+* Think of the sender like a **database connection**:
+
+    * You **don’t open/close** it for every operation.
+    * Instead, keep it open while the app is running, and **let the framework manage** its lifecycle.
+
+#### 🕒 When You Should Close
+
+* If your sender is **short-lived** or **used for batch jobs**, such as:
+
+    * Sending 100 records once a day
+    * One-time processing tasks
+      Then **it makes sense to close it** after the job is done.
+
+* You can close it via `doOnComplete()`:
+
+```java
+flux.doOnComplete(() -> sender.close());
+ ```
+
+#### ⚙️ Example Flow
+
+1. Start the producer.
+2. Emit a finite set of values (e.g., 100 records).
+3. Close the sender on completion.
+4. App exits, but consumer might still be running in the background.
+
+#### 🏁 Summary
+
+* **Keep sender open** if the app continuously emits events (e.g., in server mode).
+* **Close sender** in short-lived or batch scenarios using `doOnComplete()`.
+
+#### ❓ Question
+
+> If I can close the **sender**, can I also close the **receiver**?
+
+#### 🧠 Explanation
+
+* In a **reactive Kafka pipeline**, the **subscriber** (receiver) controls how many messages it wants by requesting a number via backpressure.
+
+* Typically, the subscriber requests:
+
+  ```java
+  Long.MAX_VALUE
+  ```
+
+  This means:
+
+    * "Give me as many messages as possible."
+    * The receiver will **keep running forever** unless explicitly limited.
+
+#### ✂️ Limiting Messages
+
+* If you only want to receive a fixed number of messages, use:
+
+```java
+receiver.receive().take(3)
+```
+
+  This will:
+
+    * Request **only 3 messages**.
+    * Automatically **terminate** the receiver after receiving them.
+
+#### 🏁 Summary
+
+* Receiver runs **indefinitely** by default (requests unlimited messages).
+* Use `.take(n)` to **limit message consumption** and trigger automatic termination.
+
+---
+
+
+
+
